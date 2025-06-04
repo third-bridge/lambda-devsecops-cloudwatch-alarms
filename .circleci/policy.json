@@ -7,7 +7,29 @@
       "Principal": {
         "AWS": [
           "arn:aws:iam::783764586577:role/art2-artemis-cloudwatch-alarms",
-          "arn:aws:iam::783764586577:role/art1-artemis-cloudwatch-alarms"
+          "arn:aws:iam::783764586577:role/art1-artemis-cloudwatch-alarms",
+          "arn:aws:iam::972446755199:root",
+          "arn:aws:iam::041085986083:root",
+          "arn:aws:iam::953397941195:root",
+          "arn:aws:iam::332061674893:root",
+          "arn:aws:iam::698748550475:root",
+          "arn:aws:iam::023458690409:root",
+          "arn:aws:iam::164204120296:root",
+          "arn:aws:iam::357136400736:root",
+          "arn:aws:iam::717279727708:root",
+          "arn:aws:iam::982081046062:root",
+          "arn:aws:iam::783764586577:root",
+          "arn:aws:iam::252663067195:root",
+          "arn:aws:iam::697339605951:root",
+          "arn:aws:iam::520678917109:root",
+          "arn:aws:iam::387706002067:root",
+          "arn:aws:iam::820242932635:root",
+          "arn:aws:iam::566632739076:root",
+          "arn:aws:iam::188800755255:root",
+          "arn:aws:iam::727646504475:root",
+          "arn:aws:iam::253490770172:root",
+          "arn:aws:iam::103183267212:root",
+          "arn:aws:iam::980921717665:root"
         ]
       },
       "Action": [
