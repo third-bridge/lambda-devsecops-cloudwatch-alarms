@@ -38,16 +38,6 @@ commands:
             fi
             echo "export IMAGE_TAG=${IMAGE_TAG}" >>"${BASH_ENV}"
 
-      - run:
-          name: Set IMAGE_TAG
-          command: |
-            if [[ "${CIRCLE_BRANCH}" =~ ^main$ ]]; then
-              IMAGE_TAG="snapshot-${CIRCLE_BUILD_NUM},latest"
-            else
-              IMAGE_TAG="snapshot-${CIRCLE_BUILD_NUM}"
-            fi
-            echo "export IMAGE_TAG=${IMAGE_TAG}" >>"${BASH_ENV}"
-
       - aws-cli/setup:
           profile_name: "circleci_ecr"
           role_arn: arn:aws:iam::332061674893:role/circleci_ecr
