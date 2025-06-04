@@ -42,6 +42,13 @@
       ]
     },
     {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Action": ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"]
+    },
+    {
       "Sid": "Allow pull and push from test0 circleci_ecr role",
       "Effect": "Allow",
       "Principal": {
