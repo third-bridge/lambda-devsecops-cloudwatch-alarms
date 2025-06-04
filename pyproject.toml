@@ -1,6 +1,6 @@
 [project]
 name = "devsecops-cloudwatch-alarms"
-version = "0.0.13"
+version = "0.0.14"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"

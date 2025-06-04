@@ -13,7 +13,7 @@ commands:
         type: string
       CACHE_IMAGE_NAME:
         type: string
-        default: buildkit-cache
+        default: cache
       IMAGE_COMPRESSION_LEVEL:
         type: integer
         default: 15
@@ -27,60 +27,60 @@ commands:
     steps:
       - checkout
 
-      # - run:
-      #     name: extract app name and version
-      #     command: |
-      #       if [[ "${CIRCLE_BRANCH}" =~ ^main$ ]]; then
-      #         APP_VERSION=$(yq -e '.project.version' pyproject.toml)
-      #         IMAGE_TAG="v${APP_VERSION},${APP_VERSION},latest"
-      #       else
-      #         IMAGE_TAG="snapshot-${CIRCLE_BUILD_NUM}"
-      #       fi
-      #       echo "export IMAGE_TAG=${IMAGE_TAG}" >>"${BASH_ENV}"
+      - run:
+          name: extract app name and version
+          command: |
+            APP_VERSION=$(yq -e '.project.version' pyproject.toml)
+            if [[ "${CIRCLE_BRANCH}" =~ ^main$ ]]; then
+              IMAGE_TAG="v${APP_VERSION},${APP_VERSION},latest"
+            else
+              IMAGE_TAG="snapshot-${CIRCLE_BUILD_NUM},v${APP_VERSION}-snapshot,v${APP_VERSION}-snapshot-${CIRCLE_BUILD_NUM}"
+            fi
+            echo "export IMAGE_TAG=${IMAGE_TAG}" >>"${BASH_ENV}"
 
-      # - aws-cli/setup:
-      #     profile_name: "circleci_ecr"
-      #     role_arn: arn:aws:iam::332061674893:role/circleci_ecr
-      #     role_session_name: "devsecops-build"
-      #     session_duration: "2400"
-      #     set_aws_env_vars: false
-      #     region: "eu-west-1"
+      - aws-cli/setup:
+          profile_name: "circleci_ecr"
+          role_arn: arn:aws:iam::332061674893:role/circleci_ecr
+          role_session_name: "devsecops-build"
+          session_duration: "2400"
+          set_aws_env_vars: false
+          region: "eu-west-1"
 
-      # - aws-ecr/build_and_push_image:
-      #     account_id: "972446755199"
-      #     region: "eu-west-1"
-      #     auth:
-      #       - run:
-      #           name: ECR login
-      #           command: |
-      #             aws --profile circleci_ecr ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 972446755199.dkr.ecr.eu-west-1.amazonaws.com
-      #     dockerfile: << parameters.DOCKERFILE >>
-      #     push_image: << parameters.PUSH_IMAGE >>
-      #     platform: << parameters.IMAGE_PLATFORM >>
-      #     checkout: false
-      #     profile_name: "circleci_ecr"
-      #     repo: << parameters.REPO_URI >>
-      #     tag: ${IMAGE_TAG}
-      #     no_output_timeout: 10m
-      #     #! Using `--output force-compression=true` requires additional time to re-compress layers imported from a previous image, which can take up to 1 minute longer. However, it can reduce the image size, for example, from 1GB to 880MB.
-      #     extra_build_args: >-
-      #       --output type=registry,compression=zstd,compression-level=<< parameters.IMAGE_COMPRESSION_LEVEL >>
-      #       --cache-from type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
-      #       --cache-to type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>,mode=max,compression=zstd,oci-mediatypes=true,image-manifest=true
+      - aws-ecr/build_and_push_image:
+          account_id: "972446755199"
+          region: "eu-west-1"
+          auth:
+            - run:
+                name: ECR login
+                command: |
+                  aws --profile circleci_ecr ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 972446755199.dkr.ecr.eu-west-1.amazonaws.com
+          dockerfile: << parameters.DOCKERFILE >>
+          push_image: << parameters.PUSH_IMAGE >>
+          platform: << parameters.IMAGE_PLATFORM >>
+          checkout: false
+          profile_name: "circleci_ecr"
+          repo: << parameters.REPO_URI >>
+          tag: ${IMAGE_TAG}
+          no_output_timeout: 10m
+          # Lambda does not support compressed images or OCI format; must use "--provenance=false"
+          extra_build_args: >-
+            --provenance=false
+            --cache-from type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
+            --cache-to type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
 
       # todo START: move repo creation, permission policy update and lifecycle policy update to infra, it requires "admin" permission to target ECR repo
       # The repo creation in infra-aws is not fliexible enough to customize policy and lifecycle policy at this moment.
-      # - run:
-      #     name: Halt if no changes on repo policy files
-      #     command: |
-      #       set -x
-      #       git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/(ecr_repo_lifecycle_)?policy\.json$" || IS_CHANGED="no"
-      #       if [ "$IS_CHANGED" != "no" ]; then
-      #         echo "policy files have been changed since diverged from main, continue the job."
-      #       else
-      #         echo "policy files have not been changed since diverged from main, halt the job."
-      #         circleci-agent step halt
-      #       fi
+      - run:
+          name: Halt if no changes on repo policy files
+          command: |
+            set -x
+            git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/(ecr_repo_lifecycle_)?policy\.json$" || IS_CHANGED="no"
+            if [ "$IS_CHANGED" != "no" ]; then
+              echo "policy files have been changed since diverged from main, continue the job."
+            else
+              echo "policy files have not been changed since diverged from main, halt the job."
+              circleci-agent step halt
+            fi
 
       - aws-cli/setup:
           profile_name: "tb_openid"
@@ -95,36 +95,36 @@ commands:
           role_arn: arn:aws:iam::972446755199:role/circleci
           source_profile: "tb_openid"
 
-      # - run:
-      #     name: aws ecr create-repository
-      #     command: |
-      #       # Create the repository if it does not exist
-      #       aws --profile prod_circleci ecr describe-repositories \
-      #         --repository-names << parameters.REPO_URI >> \
-      #         --region eu-west-1 || \
-      #       aws --profile prod_circleci ecr create-repository \
-      #         --repository-name << parameters.REPO_URI >> \
-      #         --image-scanning-configuration scanOnPush=true \
-      #         --region eu-west-1
+      - run:
+          name: aws ecr create-repository
+          command: |
+            # Create the repository if it does not exist
+            aws --profile prod_circleci ecr describe-repositories \
+              --repository-names << parameters.REPO_URI >> \
+              --region eu-west-1 || \
+            aws --profile prod_circleci ecr create-repository \
+              --repository-name << parameters.REPO_URI >> \
+              --image-scanning-configuration scanOnPush=true \
+              --region eu-west-1
 
       - run:
           name: aws ecr set-repository-policy
           command: |
-            # git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/policy\.json$" || exit 0
+            git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/policy\.json$" || exit 0
             aws --profile prod_circleci ecr set-repository-policy \
               --repository-name << parameters.REPO_URI >> \
               --policy-text file://.circleci/policy.json \
               --region eu-west-1
 
-      # - run:
-      #     name: aws ecr put-lifecycle-policy
-      #     command: |
-      #       git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/ecr_repo_lifecycle_policy\.json$" || exit 0
-      #       aws --profile prod_circleci ecr put-lifecycle-policy \
-      #         --repository-name << parameters.REPO_URI >> \
-      #         --lifecycle-policy-text file://.circleci/ecr_repo_lifecycle_policy.json \
-      #         --region eu-west-1
-      # # todo END: move repo creation, permission policy update and lifecycle policy update to infra, it requires "admin" permission to target ECR repo
+      - run:
+          name: aws ecr put-lifecycle-policy
+          command: |
+            git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/ecr_repo_lifecycle_policy\.json$" || exit 0
+            aws --profile prod_circleci ecr put-lifecycle-policy \
+              --repository-name << parameters.REPO_URI >> \
+              --lifecycle-policy-text file://.circleci/ecr_repo_lifecycle_policy.json \
+              --region eu-west-1
+      # todo END: move repo creation, permission policy update and lifecycle policy update to infra, it requires "admin" permission to target ECR repo
 
 defaults: &defaults
   machine:
