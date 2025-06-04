@@ -70,17 +70,17 @@ commands:
 
       # todo START: move repo creation, permission policy update and lifecycle policy update to infra, it requires "admin" permission to target ECR repo
       # The repo creation in infra-aws is not fliexible enough to customize policy and lifecycle policy at this moment.
-      - run:
-          name: Halt if no changes on repo policy files
-          command: |
-            set -x
-            git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/(ecr_repo_lifecycle_)?policy\.json$" || IS_CHANGED="no"
-            if [ "$IS_CHANGED" != "no" ]; then
-              echo "policy files have been changed since diverged from main, continue the job."
-            else
-              echo "policy files have not been changed since diverged from main, halt the job."
-              circleci-agent step halt
-            fi
+      # - run:
+      #     name: Halt if no changes on repo policy files
+      #     command: |
+      #       set -x
+      #       git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/(ecr_repo_lifecycle_)?policy\.json$" || IS_CHANGED="no"
+      #       if [ "$IS_CHANGED" != "no" ]; then
+      #         echo "policy files have been changed since diverged from main, continue the job."
+      #       else
+      #         echo "policy files have not been changed since diverged from main, halt the job."
+      #         circleci-agent step halt
+      #       fi
 
       - aws-cli/setup:
           profile_name: "tb_openid"
@@ -110,7 +110,7 @@ commands:
       - run:
           name: aws ecr set-repository-policy
           command: |
-            git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/policy\.json$" || exit 0
+            # git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/policy\.json$" || exit 0
             aws --profile prod_circleci ecr set-repository-policy \
               --repository-name << parameters.REPO_URI >> \
               --policy-text file://.circleci/policy.json \
