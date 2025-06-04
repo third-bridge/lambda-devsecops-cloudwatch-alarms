@@ -1,0 +1,102 @@
+[project]
+name = "devsecops-cloudwatch-alarms"
+version = "0.0.13"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aws-lambda-powertools[parser,tracer,validation]>=3.12.0",
+]
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+line-length = 120
+indent-width = 4
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = []
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+exclude = ["*.pyi"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["pydantic", "aws_lambda_powertools"]
+
+[tool.pyright]
+include = ["./main.py", "service/handlers/utils/observability.py"]
+exclude = [".venv/", "**/__pycache__", "**/.pytest_cache", "**/.ruff_cache"]
+ignore = ["./tmp.py"]
+strict = ["./"]
+defineConstant = { DEBUG = true }
+
+reportMissingImports = "error"
+reportMissingTypeStubs = false
+
+pythonVersion = "3.13"
+pythonPlatform = "Linux"
+
+executionEnvironments = [{ root = "./", reportMissingImports = "warning" }]
+
+[tool.pytest.ini_options]
+testpaths = ["./tests"]
+python_files = ["tests.py", "test_*.py"]
+pythonpath = "./"
+asyncio_default_fixture_loop_scope = "module"
+addopts = "--color=yes -rxXs -v --cov=./  --cov-report term --cov-report term-missing"
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.389",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+    "pytest-cov>=6.1.1",
+    "ruff>=0.11.9",
+]

@@ -1,0 +1,7 @@
+**/*
+
+# !main.py
+!service/**/*
+# !service/handlers/handle_sns_event.py
+# !service/handlers/utils/observability.py
+!requirements.txt

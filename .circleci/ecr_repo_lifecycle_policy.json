@@ -1,0 +1,41 @@
+{
+  "rules": [
+    {
+      "action": {
+        "type": "expire"
+      },
+      "selection": {
+        "countType": "imageCountMoreThan",
+        "countNumber": 20,
+        "tagStatus": "untagged"
+      },
+      "description": "Only keep 20 untagged",
+      "rulePriority": 10
+    },
+    {
+      "action": {
+        "type": "expire"
+      },
+      "selection": {
+        "countType": "imageCountMoreThan",
+        "countNumber": 40,
+        "tagStatus": "tagged",
+        "tagPatternList": ["snapshot-*"]
+      },
+      "description": "Only keep 40 release candidates",
+      "rulePriority": 20
+    },
+    {
+      "action": {
+        "type": "expire"
+      },
+      "selection": {
+        "countType": "imageCountMoreThan",
+        "countNumber": 100,
+        "tagStatus": "any"
+      },
+      "description": "Otherwise only keep 100 images",
+      "rulePriority": 500
+    }
+  ]
+}
