@@ -6,6 +6,8 @@
       "Effect": "Allow",
       "Principal": {
         "AWS": [
+          "arn:aws:iam::783764586577:role/art2-artemis-cloudwatch-alarms",
+          "arn:aws:iam::783764586577:role/art1-artemis-cloudwatch-alarms",
           "arn:aws:iam::972446755199:root",
           "arn:aws:iam::041085986083:root",
           "arn:aws:iam::953397941195:root",
