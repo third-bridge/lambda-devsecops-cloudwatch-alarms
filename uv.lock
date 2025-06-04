@@ -104,7 +104,7 @@ wheels = [
 
 [[package]]
 name = "devsecops-cloudwatch-alarms"
-version = "0.0.13"
+version = "0.0.14"
 source = { virtual = "." }
 dependencies = [
     { name = "aws-lambda-powertools", extra = ["parser", "tracer", "validation"] },
