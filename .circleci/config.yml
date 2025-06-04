@@ -64,7 +64,6 @@ commands:
           no_output_timeout: 10m
           #! Using `--output force-compression=true` requires additional time to re-compress layers imported from a previous image, which can take up to 1 minute longer. However, it can reduce the image size, for example, from 1GB to 880MB.
           extra_build_args: >-
-            --provenance=false
             --output type=docker
 
         # --cache-from type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
