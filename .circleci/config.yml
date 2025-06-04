@@ -13,7 +13,7 @@ commands:
         type: string
       CACHE_IMAGE_NAME:
         type: string
-        default: buildkit-cache
+        default: cache
       IMAGE_COMPRESSION_LEVEL:
         type: integer
         default: 15
