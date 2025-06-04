@@ -65,9 +65,10 @@ commands:
           #! Using `--output force-compression=true` requires additional time to re-compress layers imported from a previous image, which can take up to 1 minute longer. However, it can reduce the image size, for example, from 1GB to 880MB.
           extra_build_args: >-
             --provenance=false
-            --output compression=zstd,compression-level=<< parameters.IMAGE_COMPRESSION_LEVEL >>
-            --cache-from type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
-            --cache-to type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
+            --output type=registry,compression=zstd,compression-level=<< parameters.IMAGE_COMPRESSION_LEVEL >>
+
+        # --cache-from type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
+        # --cache-to type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
 
       # todo START: move repo creation, permission policy update and lifecycle policy update to infra, it requires "admin" permission to target ECR repo
       # The repo creation in infra-aws is not fliexible enough to customize policy and lifecycle policy at this moment.
