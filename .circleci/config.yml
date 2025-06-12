@@ -144,8 +144,9 @@ jobs:
     steps:
       - build_image_with_cache_from_registry:
           REPO_URI: "devsecops-cloudwatch-alarms"
+          DOCKERFILE: "lambda_sns_to_slack/Dockerfile"
           CACHE_IMAGE_NAME: "lambda_sns_to_slack_cache"
-          BUILD_PATH: "lambda_sns_to_slack"
+          BUILD_PATH: "./lambda_sns_to_slack/"
 
 workflows:
   image_build:
