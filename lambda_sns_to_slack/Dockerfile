@@ -3,6 +3,9 @@ FROM docker.io/library/rust:1.87 AS builder
 RUN apt-get update && \
     apt-get install -y \
     libssl-dev \
+    libssl-dev:amd64 \
+    libssl-dev:musl-amd64 \
+    musl-dev \
     musl-tools \
     pkg-config && \
     rm -rf /var/lib/apt/lists/*
