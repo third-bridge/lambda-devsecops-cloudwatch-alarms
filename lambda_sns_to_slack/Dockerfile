@@ -7,8 +7,8 @@ COPY src ./src
 ENV OPENSSL_STATIC=1
 ENV OPENSSL_DIR="/usr/local/musl"
 
-RUN cargo build --release --target x86_64-unknown-linux-musl
+RUN cargo build --release
 
 FROM public.ecr.aws/lambda/provided:al2023
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/lambda_sns_to_slack /var/task/bootstrap
+COPY --from=builder /app/target/release/lambda_sns_to_slack /var/task/bootstrap
 CMD ["bootstrap"]
