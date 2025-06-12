@@ -11,6 +11,7 @@ commands:
         type: string
       DOCKERFILE:
         type: string
+        default: Dockerfile
       CACHE_IMAGE_NAME:
         type: string
         default: cache
@@ -24,6 +25,10 @@ commands:
         default: true
         description: Set to false to build an image without pushing to repository, e.g. to validate the Dockerfile.
         type: boolean
+      BUILD_PATH:
+        default: .
+        description: Path to the directory containing your build context. Defaults to . (working directory).
+        type: string
     steps:
       - checkout
 
@@ -57,6 +62,7 @@ commands:
           dockerfile: << parameters.DOCKERFILE >>
           push_image: << parameters.PUSH_IMAGE >>
           platform: << parameters.IMAGE_PLATFORM >>
+          build_path: << parameters.BUILD_PATH >>
           checkout: false
           profile_name: "circleci_ecr"
           repo: << parameters.REPO_URI >>
@@ -138,8 +144,8 @@ jobs:
     steps:
       - build_image_with_cache_from_registry:
           REPO_URI: "devsecops-cloudwatch-alarms"
-          DOCKERFILE: "lambda_sns_to_slack/Dockerfile"
           CACHE_IMAGE_NAME: "lambda_sns_to_slack_cache"
+          BUILD_PATH: "lambda_sns_to_slack"
 
 workflows:
   image_build:
