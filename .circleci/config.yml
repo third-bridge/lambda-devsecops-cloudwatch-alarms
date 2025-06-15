@@ -20,7 +20,7 @@ commands:
         default: 15
       IMAGE_PLATFORM:
         type: string
-        default: linux/amd64
+        default: linux/arm64
       PUSH_IMAGE:
         default: true
         description: Set to false to build an image without pushing to repository, e.g. to validate the Dockerfile.
@@ -134,9 +134,8 @@ commands:
 
 defaults: &defaults
   machine:
-    image: ubuntu-2404:current
-    resource_class: medium
-    docker_layer_caching: false
+    image: ubuntu-2204:current
+    resource_class: arm.medium
 
 jobs:
   build:
@@ -144,9 +143,10 @@ jobs:
     steps:
       - build_image_with_cache_from_registry:
           REPO_URI: "devsecops-cloudwatch-alarms"
-          DOCKERFILE: "lambda_sns_to_slack/Dockerfile"
+          DOCKERFILE: "lambda_sns_to_slack/Dockerfile.arm64"
           CACHE_IMAGE_NAME: "lambda_sns_to_slack_cache"
           BUILD_PATH: "./lambda_sns_to_slack/"
+          IMAGE_PLATFORM: linux/arm64
 
 workflows:
   image_build:
