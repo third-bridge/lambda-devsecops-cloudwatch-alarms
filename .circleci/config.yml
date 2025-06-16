@@ -227,6 +227,11 @@ commands:
               lambda_sns_to_slack/target/lambda/lambda_sns_to_slack/bootstrap.zip \
               s3://thirdbridge-lambda-pipeline-artifacts/serverless/devsecops-cloudwatch-alarms/${ZIP_NAME} \
 
+            aws --profile prod_circleci --region eu-west-1 s3api put-object-acl \
+              --bucket thirdbridge-lambda-pipeline-artifacts \
+              --key serverless/devsecops-cloudwatch-alarms/${ZIP_NAME} \
+              --acl authenticated-read
+
       - run:
           name: Show cache size and update CACHED_VERSIONS.txt
           command: |
