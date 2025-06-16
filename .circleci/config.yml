@@ -151,6 +151,8 @@ commands:
       - run:
           name: Install Zig
           command: |
+            set -x
+
             DO_CURL() { curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@" }
             ZIG_VERSION=$(DO_CURL https://api.github.com/repos/ziglang/zig/releases/latest | jq -r '.tag_name')
 
