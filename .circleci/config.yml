@@ -169,6 +169,7 @@ commands:
           command: |
             cd lambda_sns_to_slack/
             rustup target add aarch64-unknown-linux-musl
+            rm -f target/lambda/lambda_sns_to_slack/bootstrap target/lambda/lambda_sns_to_slack/bootstrap.zip
             cargo lambda build --target aarch64-unknown-linux-musl --release
             cargo lambda build --target aarch64-unknown-linux-musl --release --output-format zip
             ls -sl target/lambda/lambda_sns_to_slack/
