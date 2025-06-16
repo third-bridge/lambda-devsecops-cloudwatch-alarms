@@ -193,9 +193,8 @@ commands:
       - run:
           name: Compress binary with upx
           command: |
-            cd lambda_sns_to_slack/
-            upx --best target/lambda/lambda_sns_to_slack/bootstrap
-            cd target/lambda/lambda_sns_to_slack/
+            cd lambda_sns_to_slack/target/lambda/lambda_sns_to_slack/
+            upx --best ./bootstrap
             zip --update ./bootstrap.zip ./bootstrap
             ls -sl
 
@@ -254,6 +253,7 @@ commands:
           paths:
             - /home/circleci/.local/bin/ # upx binary
             - /home/circleci/.cargo/
+            - /home/circleci/.rustup/
             - /home/circleci/project/lambda_sns_to_slack/target/
             - /home/circleci/project/CACHED_VERSIONS.txt
 
