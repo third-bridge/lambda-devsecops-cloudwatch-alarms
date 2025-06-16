@@ -151,9 +151,9 @@ commands:
       - run:
           name: Install Zig
           command: |
-            set -x
-
-            DO_CURL() { curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@" }
+            DO_CURL() {
+              curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@"
+            }
             ZIG_VER=$(DO_CURL https://api.github.com/repos/ziglang/zig/releases/latest | jq -r '.tag_name')
 
             grep "ZIG_VER=${ZIG_VER}" CACHED_VERSIONS.txt && exit 0 || echo "Installing new version: ${ZIG_VER}"
@@ -175,7 +175,9 @@ commands:
       - run:
           name: Install upx
           command: |
-            DO_CURL() { curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@" }
+            DO_CURL() {
+              curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@"
+            }
 
             OS_ARCH=$(uname -m | sed -e 's/aarch/arm/' -e 's/x86_/amd/')
             UPX_VERSION=$(DO_CURL https://api.github.com/repos/upx/upx/releases/latest | jq -r '.tag_name')
