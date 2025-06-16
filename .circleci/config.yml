@@ -147,7 +147,17 @@ commands:
           command: |
             curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
             cargo binstall cargo-lambda
-            pip3 install ziglang
+
+      - run:
+          name: Install Zig
+          command: |
+            DO_CURL() { curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@" }
+
+            OS_ARCH=$(uname -m)
+            ZIG_VERSION=$(DO_CURL https://api.github.com/repos/ziglang/zig/releases/latest | jq -r '.tag_name')
+
+            ZIG_URL=$(DO_CURL https://ziglang.org/download/index.json | jq -r ".\"$ZIG_VERSION\".linux-\"$OS_ARCH\".tarball")
+            DO_CURL "${ZIG_URL}" | tar -xvzf - --strip-components=1 -C ~/.local/bin/
 
       - run:
           name: cargo lambda build
@@ -160,9 +170,7 @@ commands:
       - run:
           name: Install upx
           command: |
-            DO_CURL() {
-                curl --retry 10 -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" -L --proto '=https' --tlsv1.2 -sSf "$@"
-            }
+            DO_CURL() { curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@" }
 
             OS_ARCH=$(uname -m | sed -e 's/aarch/arm/' -e 's/x86_/amd/')
             UPX_VERSION=$(DO_CURL https://api.github.com/repos/upx/upx/releases/latest | jq -r '.tag_name')
