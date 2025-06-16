@@ -2,90 +2,207 @@ version: 2.1
 
 orbs:
   aws-cli: circleci/aws-cli@5
-  aws-ecr: circleci/aws-ecr@9
+  # aws-ecr: circleci/aws-ecr@9
 
 commands:
-  build_image_with_cache_from_registry:
-    parameters:
-      REPO_URI:
-        type: string
-      DOCKERFILE:
-        type: string
-      CACHE_IMAGE_NAME:
-        type: string
-        default: cache
-      IMAGE_COMPRESSION_LEVEL:
-        type: integer
-        default: 15
-      IMAGE_PLATFORM:
-        type: string
-        default: linux/amd64
-      PUSH_IMAGE:
-        default: true
-        description: Set to false to build an image without pushing to repository, e.g. to validate the Dockerfile.
-        type: boolean
+  ##! Commented out image_build workflow as it is not used currently
+  # build_image_with_cache_from_registry:
+  #   parameters:
+  #     REPO_URI:
+  #       type: string
+  #     DOCKERFILE:
+  #       type: string
+  #       default: Dockerfile
+  #     CACHE_IMAGE_NAME:
+  #       type: string
+  #       default: cache
+  #     IMAGE_COMPRESSION_LEVEL:
+  #       type: integer
+  #       default: 15
+  #     IMAGE_PLATFORM:
+  #       type: string
+  #       default: linux/arm64
+  #     PUSH_IMAGE:
+  #       default: true
+  #       description: Set to false to build an image without pushing to repository, e.g. to validate the Dockerfile.
+  #       type: boolean
+  #     BUILD_PATH:
+  #       default: .
+  #       description: Path to the directory containing your build context. Defaults to . (working directory).
+  #       type: string
+  #   steps:
+  #     - checkout
+
+  #     - run:
+  #         name: extract app name and version
+  #         command: |
+  #           APP_VERSION=$(yq -e '.package.version' lambda_sns_to_slack/Cargo.toml)
+  #           if [[ "${CIRCLE_BRANCH}" =~ ^main$ ]]; then
+  #             IMAGE_TAG="v${APP_VERSION},${APP_VERSION},latest"
+  #           else
+  #             IMAGE_TAG="snapshot-${CIRCLE_BUILD_NUM},v${APP_VERSION}-snapshot,v${APP_VERSION}-snapshot-${CIRCLE_BUILD_NUM}"
+  #           fi
+  #           echo "export IMAGE_TAG=${IMAGE_TAG}" >>"${BASH_ENV}"
+
+  #     - aws-cli/setup:
+  #         profile_name: "circleci_ecr"
+  #         role_arn: arn:aws:iam::332061674893:role/circleci_ecr
+  #         role_session_name: "devsecops-build"
+  #         session_duration: "2400"
+  #         set_aws_env_vars: false
+  #         region: "eu-west-1"
+
+  #     - aws-ecr/build_and_push_image:
+  #         account_id: "972446755199"
+  #         region: "eu-west-1"
+  #         auth:
+  #           - run:
+  #               name: ECR login
+  #               command: |
+  #                 aws --profile circleci_ecr ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 972446755199.dkr.ecr.eu-west-1.amazonaws.com
+  #         dockerfile: << parameters.DOCKERFILE >>
+  #         push_image: << parameters.PUSH_IMAGE >>
+  #         platform: << parameters.IMAGE_PLATFORM >>
+  #         build_path: << parameters.BUILD_PATH >>
+  #         checkout: false
+  #         profile_name: "circleci_ecr"
+  #         repo: << parameters.REPO_URI >>
+  #         tag: ${IMAGE_TAG}
+  #         no_output_timeout: 10m
+  #         # Lambda does not support compressed images or OCI format; must use "--provenance=false"
+  #         extra_build_args: >-
+  #           --provenance=false
+  #           --cache-from type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
+  #           --cache-to type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
+
+  #     # todo START: move repo creation, permission policy update and lifecycle policy update to infra, it requires "admin" permission to target ECR repo
+  #     # The repo creation in infra-aws is not fliexible enough to customize policy and lifecycle policy at this moment.
+  #     - run:
+  #         name: Halt if no changes on repo policy files
+  #         command: |
+  #           set -x
+  #           git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/(ecr_repo_lifecycle_)?policy\.json$" || IS_CHANGED="no"
+  #           if [ "$IS_CHANGED" != "no" ]; then
+  #             echo "policy files have been changed since diverged from main, continue the job."
+  #           else
+  #             echo "policy files have not been changed since diverged from main, halt the job."
+  #             circleci-agent step halt
+  #           fi
+
+  #     - aws-cli/setup:
+  #         profile_name: "tb_openid"
+  #         role_arn: arn:aws:iam::332061674893:role/openid
+  #         role_session_name: "devsecops-infra"
+  #         session_duration: "2400"
+  #         set_aws_env_vars: false
+  #         region: "eu-west-1"
+
+  #     - aws-cli/role_arn_setup:
+  #         profile_name: "prod_circleci"
+  #         role_arn: arn:aws:iam::972446755199:role/circleci
+  #         source_profile: "tb_openid"
+
+  #     - run:
+  #         name: aws ecr create-repository
+  #         command: |
+  #           # Create the repository if it does not exist
+  #           aws --profile prod_circleci ecr describe-repositories \
+  #             --repository-names << parameters.REPO_URI >> \
+  #             --region eu-west-1 || \
+  #           aws --profile prod_circleci ecr create-repository \
+  #             --repository-name << parameters.REPO_URI >> \
+  #             --image-scanning-configuration scanOnPush=true \
+  #             --region eu-west-1
+
+  #     - run:
+  #         name: aws ecr set-repository-policy
+  #         command: |
+  #           git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/policy\.json$" || exit 0
+  #           aws --profile prod_circleci ecr set-repository-policy \
+  #             --repository-name << parameters.REPO_URI >> \
+  #             --policy-text file://.circleci/policy.json \
+  #             --region eu-west-1
+
+  #     - run:
+  #         name: aws ecr put-lifecycle-policy
+  #         command: |
+  #           git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/ecr_repo_lifecycle_policy\.json$" || exit 0
+  #           aws --profile prod_circleci ecr put-lifecycle-policy \
+  #             --repository-name << parameters.REPO_URI >> \
+  #             --lifecycle-policy-text file://.circleci/ecr_repo_lifecycle_policy.json \
+  #             --region eu-west-1
+  #     # todo END: move repo creation, permission policy update and lifecycle policy update to infra, it requires "admin" permission to target ECR repo
+
+  cargo_lambda_build:
     steps:
       - checkout
 
+      - restore_cache:
+          name: Restore Cargo Cache
+          keys:
+            - v1-cargo-cache-
+
       - run:
-          name: extract app name and version
+          name: Install cargo-lambda
           command: |
-            APP_VERSION=$(yq -e '.project.version' pyproject.toml)
-            if [[ "${CIRCLE_BRANCH}" =~ ^main$ ]]; then
-              IMAGE_TAG="v${APP_VERSION},${APP_VERSION},latest"
-            else
-              IMAGE_TAG="snapshot-${CIRCLE_BUILD_NUM},v${APP_VERSION}-snapshot,v${APP_VERSION}-snapshot-${CIRCLE_BUILD_NUM}"
-            fi
-            echo "export IMAGE_TAG=${IMAGE_TAG}" >>"${BASH_ENV}"
+            curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+            cargo binstall cargo-lambda
 
-      - aws-cli/setup:
-          profile_name: "circleci_ecr"
-          role_arn: arn:aws:iam::332061674893:role/circleci_ecr
-          role_session_name: "devsecops-build"
-          session_duration: "2400"
-          set_aws_env_vars: false
-          region: "eu-west-1"
-
-      - aws-ecr/build_and_push_image:
-          account_id: "972446755199"
-          region: "eu-west-1"
-          auth:
-            - run:
-                name: ECR login
-                command: |
-                  aws --profile circleci_ecr ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 972446755199.dkr.ecr.eu-west-1.amazonaws.com
-          dockerfile: << parameters.DOCKERFILE >>
-          push_image: << parameters.PUSH_IMAGE >>
-          platform: << parameters.IMAGE_PLATFORM >>
-          checkout: false
-          profile_name: "circleci_ecr"
-          repo: << parameters.REPO_URI >>
-          tag: ${IMAGE_TAG}
-          no_output_timeout: 10m
-          # Lambda does not support compressed images or OCI format; must use "--provenance=false"
-          extra_build_args: >-
-            --provenance=false
-            --cache-from type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
-            --cache-to type=registry,ref=972446755199.dkr.ecr.eu-west-1.amazonaws.com/<< parameters.REPO_URI >>:<< parameters.CACHE_IMAGE_NAME >>
-
-      # todo START: move repo creation, permission policy update and lifecycle policy update to infra, it requires "admin" permission to target ECR repo
-      # The repo creation in infra-aws is not fliexible enough to customize policy and lifecycle policy at this moment.
       - run:
-          name: Halt if no changes on repo policy files
+          name: Install Zig
           command: |
-            set -x
-            git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/(ecr_repo_lifecycle_)?policy\.json$" || IS_CHANGED="no"
-            if [ "$IS_CHANGED" != "no" ]; then
-              echo "policy files have been changed since diverged from main, continue the job."
-            else
-              echo "policy files have not been changed since diverged from main, halt the job."
-              circleci-agent step halt
-            fi
+            DO_CURL() {
+              curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@"
+            }
+            ZIG_VER=$(DO_CURL https://api.github.com/repos/ziglang/zig/releases/latest | jq -r '.tag_name')
+
+            grep "ZIG_VER=${ZIG_VER}" CACHED_VERSIONS.txt && exit 0 || echo "Installing new version: ${ZIG_VER}"
+
+            OS_ARCH=$(uname -m)
+            ZIG_URL="https://ziglang.org/download/${ZIG_VER}/zig-${OS_ARCH}-linux-${ZIG_VER}.tar.xz"
+
+            mkdir -p ~/.local/bin/
+            DO_CURL "${ZIG_URL}" | tar -xvJf - --strip-components=1 -C ~/.local/bin/
+
+      - run:
+          name: cargo lambda build
+          command: |
+            cd lambda_sns_to_slack/
+            rustup target add aarch64-unknown-linux-musl
+            rm -f target/lambda/lambda_sns_to_slack/bootstrap target/lambda/lambda_sns_to_slack/bootstrap.zip
+            cargo lambda build --target aarch64-unknown-linux-musl --release
+            cargo lambda build --target aarch64-unknown-linux-musl --release --output-format zip
+            ls -sl target/lambda/lambda_sns_to_slack/
+
+      - run:
+          name: Install upx
+          command: |
+            DO_CURL() {
+              curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@"
+            }
+            UPX_VERSION=$(DO_CURL https://api.github.com/repos/upx/upx/releases/latest | jq -r '.tag_name')
+
+            grep "UPX_VER=${UPX_VER}" CACHED_VERSIONS.txt && exit 0 || echo "Installing new version: ${UPX_VER}"
+
+            OS_ARCH=$(uname -m | sed -e 's/aarch/arm/' -e 's/x86_/amd/')
+            UPX_URL="https://github.com/upx/upx/releases/download/${UPX_VERSION}/upx-${UPX_VERSION#v}-${OS_ARCH}_linux.tar.xz"
+
+            DO_CURL "${UPX_URL}" | tar -xvJf -
+            install -m 755 upx-${UPX_VERSION#v}-${OS_ARCH}_linux/upx ~/.local/bin/upx
+
+      - run:
+          name: Compress binary with upx
+          command: |
+            cd lambda_sns_to_slack/
+            upx --best target/lambda/lambda_sns_to_slack/bootstrap
+            cd target/lambda/lambda_sns_to_slack/
+            zip --update ./bootstrap.zip ./bootstrap
+            ls -sl
 
       - aws-cli/setup:
           profile_name: "tb_openid"
           role_arn: arn:aws:iam::332061674893:role/openid
-          role_session_name: "devsecops-infra"
+          role_session_name: "devsecops-build"
           session_duration: "2400"
           set_aws_env_vars: false
           region: "eu-west-1"
@@ -96,52 +213,80 @@ commands:
           source_profile: "tb_openid"
 
       - run:
-          name: aws ecr create-repository
+          name: aws s3 upload bootstrap.zip
           command: |
-            # Create the repository if it does not exist
-            aws --profile prod_circleci ecr describe-repositories \
-              --repository-names << parameters.REPO_URI >> \
-              --region eu-west-1 || \
-            aws --profile prod_circleci ecr create-repository \
-              --repository-name << parameters.REPO_URI >> \
-              --image-scanning-configuration scanOnPush=true \
-              --region eu-west-1
+            APP_VERSION=$(yq -e '.package.version' lambda_sns_to_slack/Cargo.toml)
+            OS_ARCH=$(uname -m | sed -e 's/aarch/arm/' -e 's/x86_/amd/')
+
+            if [[ "${CIRCLE_BRANCH}" =~ ^main$ ]]; then
+              ZIP_NAME="bootstrap-${APP_VERSION}-${OS_ARCH}.zip"
+            else
+              ZIP_NAME="bootstrap-${APP_VERSION}-snapshot-${CIRCLE_BUILD_NUM}-${OS_ARCH}.zip"
+            fi
+
+            aws --profile prod_circleci --region eu-west-1 s3 cp \
+              lambda_sns_to_slack/target/lambda/lambda_sns_to_slack/bootstrap.zip \
+              s3://thirdbridge-lambda-pipeline-artifacts/serverless/devsecops-cloudwatch-alarms/${ZIP_NAME} \
+
+            aws --profile prod_circleci --region eu-west-1 s3api put-object-acl \
+              --bucket thirdbridge-lambda-pipeline-artifacts \
+              --key serverless/devsecops-cloudwatch-alarms/${ZIP_NAME} \
+              --acl authenticated-read
 
       - run:
-          name: aws ecr set-repository-policy
+          name: Show cache size and update CACHED_VERSIONS.txt
           command: |
-            git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/policy\.json$" || exit 0
-            aws --profile prod_circleci ecr set-repository-policy \
-              --repository-name << parameters.REPO_URI >> \
-              --policy-text file://.circleci/policy.json \
-              --region eu-west-1
+            du -sh /home/circleci/.local/bin/* # upx binary
+            du -sh /home/circleci/.cargo/*
 
-      - run:
-          name: aws ecr put-lifecycle-policy
-          command: |
-            git diff main...HEAD --no-commit-id --name-only | grep --perl-regexp "^\.circleci/ecr_repo_lifecycle_policy\.json$" || exit 0
-            aws --profile prod_circleci ecr put-lifecycle-policy \
-              --repository-name << parameters.REPO_URI >> \
-              --lifecycle-policy-text file://.circleci/ecr_repo_lifecycle_policy.json \
-              --region eu-west-1
-      # todo END: move repo creation, permission policy update and lifecycle policy update to infra, it requires "admin" permission to target ECR repo
+            cat >CACHED_VERSIONS.txt \<<EOF
+            UPX_VER=$(~/.local/bin/upx --version)
+            CARGO_BINSTALL_VER=$(cargo binstall -V)
+            CARGO_LAMBDA_VER=$(cargo lambda -V)
+            ZIG_VER=$(zig version)
+            EOF
 
-defaults: &defaults
-  machine:
-    image: ubuntu-2404:current
-    resource_class: medium
-    docker_layer_caching: false
+            cat CACHED_VERSIONS.txt
+
+      - save_cache:
+          name: Save Cargo Cache
+          key: v1-cargo-cache-{{ checksum "CACHED_VERSIONS.txt" }}
+          paths:
+            - /home/circleci/.local/bin/ # upx binary
+            - /home/circleci/.cargo/
+            - /home/circleci/project/lambda_sns_to_slack/target/
+            - /home/circleci/project/CACHED_VERSIONS.txt
 
 jobs:
-  build:
-    <<: *defaults
+  ##! Commented out image_build workflow as it is not used currently
+  # build:
+  #   <<: *defaults
+  #   machine:
+  #     image: ubuntu-2204:current
+  #     resource_class: arm.medium
+  #   steps:
+  #     - build_image_with_cache_from_registry:
+  #         REPO_URI: "devsecops-cloudwatch-alarms"
+  #         DOCKERFILE: "lambda_sns_to_slack/Dockerfile.arm64"
+  #         CACHE_IMAGE_NAME: "lambda_sns_to_slack_cache"
+  #         BUILD_PATH: "./lambda_sns_to_slack/"
+  #         IMAGE_PLATFORM: linux/arm64
+
+  lambda_zip_build:
+    docker:
+      - image: cimg/rust:1.87.0
+    resource_class: arm.medium
     steps:
-      - build_image_with_cache_from_registry:
-          REPO_URI: "devsecops-cloudwatch-alarms"
-          DOCKERFILE: "Dockerfile"
+      - cargo_lambda_build
 
 workflows:
-  image_build:
+  ##! Commented out image_build workflow as it is not used currently
+  # image_build:
+  #   jobs:
+  #     - build:
+  #         context: ThirdBridge
+
+  zip_build:
     jobs:
-      - build:
+      - lambda_zip_build:
           context: ThirdBridge
