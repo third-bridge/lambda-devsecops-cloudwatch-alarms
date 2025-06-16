@@ -147,7 +147,7 @@ commands:
           command: |
             curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
             cargo binstall cargo-lambda
-            cargo install --locked cargo-zigbuild
+            pip3 install ziglang
 
       - run:
           name: cargo lambda build
