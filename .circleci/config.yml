@@ -152,11 +152,14 @@ commands:
           name: Install Zig
           command: |
             DO_CURL() { curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@" }
-
-            OS_ARCH=$(uname -m)
             ZIG_VERSION=$(DO_CURL https://api.github.com/repos/ziglang/zig/releases/latest | jq -r '.tag_name')
 
-            ZIG_URL=$(DO_CURL https://ziglang.org/download/index.json | jq -r ".\"${ZIG_VERSION}\".\"${OS_ARCH}-linux\".tarball")
+            grep "ZIG_VERSION=${ZIG_VERSION}" CACHED_VERSIONS.txt && exit 0 || echo "Installing new version: ${ZIG_VERSION}"
+
+            OS_ARCH=$(uname -m)
+            ZIG_URL="https://ziglang.org/download/${ZIG_VERSION}/zig-${OS_ARCH}-linux-${ZIG_VERSION}.tar.xz"
+
+            mkdir -p ~/.local/bin/
             DO_CURL "${ZIG_URL}" | tar -xvzf - --strip-components=1 -C ~/.local/bin/
 
       - run:
@@ -225,6 +228,7 @@ commands:
             UPX_VER=$(~/.local/bin/upx --version)
             CARGO_BINSTALL_VER=$(cargo binstall -V)
             CARGO_LAMBDA_VER=$(cargo lambda -V)
+            ZIG_VERSION=$(zig version)
             EOF
 
             cat CACHED_VERSIONS.txt
