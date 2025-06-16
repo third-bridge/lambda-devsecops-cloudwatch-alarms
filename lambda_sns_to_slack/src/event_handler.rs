@@ -1,10 +1,11 @@
 use std::env;
 
-use aws_lambda_events::event::sns::{CloudWatchAlarmPayload, SnsEvent};
+use aws_lambda_events::event::sns::SnsEvent;
 use lambda_runtime::{tracing, Error, LambdaEvent};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 static RE: Lazy<Regex> =
@@ -12,13 +13,31 @@ static RE: Lazy<Regex> =
 
 static HTTP_CLIENT: Lazy<Client> = Lazy::new(Client::new);
 
+// ! Custom structs to workaround trend based alarms without threshold, aws_lambda_events may update it in the future
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct MyCloudWatchAlarmPayload {
+    pub alarm_name: String,
+    pub new_state_value: String,
+    pub new_state_reason: String,
+    pub region: String,
+    pub alarm_description: String,
+    pub trigger: MyCloudWatchAlarmTrigger,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct MyCloudWatchAlarmTrigger {
+    pub threshold: Option<f64>,
+}
+
 /// Converts an SNS event into a list of Slack payloads (serde_json::Value)
 pub(crate) fn sns_event_to_slack_payload_list(sns_event: &SnsEvent) -> Result<Vec<Value>, Error> {
     sns_event.records.iter().map(|record| {
         tracing::debug!("Record: {:?}", record);
-        let payload: CloudWatchAlarmPayload = serde_json::from_str(&record.sns.message)?;
+        let payload: MyCloudWatchAlarmPayload = serde_json::from_str(&record.sns.message)?;
 
-        let color = match payload.new_state_value.as_str() {
+        let color = match payload.new_state_value.as_ref() {
             "OK" => "36a64f",
             "ALARM" => "cb2431",
             "INSUFFICIENT_DATA" => "cb2431",

@@ -5,7 +5,7 @@ codegen-units = 1
 
 [package]
 name = "lambda_sns_to_slack"
-version = "0.2.5"
+version = "0.2.6"
 edition = "2021"
 
 [dependencies]
