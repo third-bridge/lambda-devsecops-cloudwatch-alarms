@@ -168,6 +168,7 @@ commands:
           name: cargo lambda build
           command: |
             cd lambda_sns_to_slack/
+            rustup target add aarch64-unknown-linux-musl
             cargo lambda build --target aarch64-unknown-linux-musl --release
             cargo lambda build --target aarch64-unknown-linux-musl --release --output-format zip
             ls -sl target/lambda/lambda_sns_to_slack/
