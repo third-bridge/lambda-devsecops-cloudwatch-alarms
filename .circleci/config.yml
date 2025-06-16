@@ -194,8 +194,7 @@ commands:
           name: Compress binary with upx
           command: |
             cd lambda_sns_to_slack/target/lambda/lambda_sns_to_slack/
-            upx --best target/lambda/lambda_sns_to_slack/bootstrap
-            cd
+            upx --best ./bootstrap
             zip --update ./bootstrap.zip ./bootstrap
             ls -sl
 
