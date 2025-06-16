@@ -179,13 +179,15 @@ commands:
             DO_CURL() {
               curl --retry 10 -L --proto '=https' --tlsv1.2 -sSf "$@"
             }
+            UPX_VERSION=$(DO_CURL https://api.github.com/repos/upx/upx/releases/latest | jq -r '.tag_name')
+
+            grep "UPX_VER=${UPX_VER}" CACHED_VERSIONS.txt && exit 0 || echo "Installing new version: ${UPX_VER}"
 
             OS_ARCH=$(uname -m | sed -e 's/aarch/arm/' -e 's/x86_/amd/')
-            UPX_VERSION=$(DO_CURL https://api.github.com/repos/upx/upx/releases/latest | jq -r '.tag_name')
             UPX_URL="https://github.com/upx/upx/releases/download/${UPX_VERSION}/upx-${UPX_VERSION#v}-${OS_ARCH}_linux.tar.xz"
 
             DO_CURL "${UPX_URL}" | tar -xvJf -
-            install -m 755 upx-${UPX_VERSION}-${OS_ARCH}_linux/upx ~/.local/bin/upx
+            install -m 755 upx-${UPX_VERSION#v}-${OS_ARCH}_linux/upx ~/.local/bin/upx
 
       - run:
           name: Compress binary with upx
