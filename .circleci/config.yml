@@ -156,7 +156,7 @@ commands:
             OS_ARCH=$(uname -m)
             ZIG_VERSION=$(DO_CURL https://api.github.com/repos/ziglang/zig/releases/latest | jq -r '.tag_name')
 
-            ZIG_URL=$(DO_CURL https://ziglang.org/download/index.json | jq -r ".\"$ZIG_VERSION\".\"$OS_ARCH\-linux".tarball")
+            ZIG_URL=$(DO_CURL https://ziglang.org/download/index.json | jq -r ".\"${ZIG_VERSION}\".\"${OS_ARCH}-linux".tarball")
             DO_CURL "${ZIG_URL}" | tar -xvzf - --strip-components=1 -C ~/.local/bin/
 
       - run:
