@@ -10,10 +10,12 @@ use serde_json::{json, Value};
 static RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\d+\.\d+|\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}|\d+").unwrap());
 
+static HTTP_CLIENT: Lazy<Client> = Lazy::new(Client::new);
+
 /// Converts an SNS event into a list of Slack payloads (serde_json::Value)
 pub(crate) fn sns_event_to_slack_payload_list(sns_event: &SnsEvent) -> Result<Vec<Value>, Error> {
     sns_event.records.iter().map(|record| {
-        tracing::info!("Record: {:?}", record);
+        tracing::debug!("Record: {:?}", record);
         let payload: CloudWatchAlarmPayload = serde_json::from_str(&record.sns.message)?;
 
         let color = match payload.new_state_value.as_str() {
@@ -55,12 +57,11 @@ pub(crate) async fn function_handler(event: LambdaEvent<SnsEvent>) -> Result<(),
     let sns_event = event.payload;
     let slack_payloads = sns_event_to_slack_payload_list(&sns_event)?;
 
-    let client = Client::new();
     let slack_webhook_url =
         env::var("SLACK_WEBHOOK_URL").expect("SLACK_WEBHOOK_URL environment variable not set");
 
     for slack_payload in slack_payloads {
-        let res = client
+        let res = HTTP_CLIENT
             .post(&slack_webhook_url)
             .json(&slack_payload)
             .send()

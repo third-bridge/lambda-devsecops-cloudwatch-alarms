@@ -1,13 +1,17 @@
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
+
 [package]
 name = "lambda_sns_to_slack"
-version = "0.2.4"
+version = "0.2.5"
 edition = "2021"
 
 [dependencies]
 aws_lambda_events = { version = "0.16.1", default-features = false, features = [
     "sns",
 ] }
-
 lambda_runtime = "0.14.2"
 once_cell = "1.21.3"
 regex = "1.11.1"

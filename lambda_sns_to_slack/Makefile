@@ -16,6 +16,10 @@ fmt:
 lint: fmt
 	cargo clippy --all-targets --all-features -- -D warnings
 
+upgrade:
+	cargo outdated
+	cargo upgrade
+
 up: lint
 	cargo lambda watch
 
@@ -24,7 +28,21 @@ invoke:
 
 build:
 	cargo lambda build --release
-# cargo lambda build --target x86_64-unknown-linux-gnu
+
+arm64_binary:
+	rm -f target/lambda/lambda_sns_to_slack/bootstrap target/lambda/lambda_sns_to_slack/bootstrap.zip
+	cargo lambda build --target aarch64-unknown-linux-musl --release
+	cargo lambda build --target aarch64-unknown-linux-musl --release --output-format zip
+	ls -sl target/lambda/lambda_sns_to_slack/
+
+upx: ## compress the binary with upx
+upx: arm64_binary
+	upx --best target/lambda/lambda_sns_to_slack/bootstrap
+	ls -sl target/lambda/lambda_sns_to_slack/
+
+zip_build: upx
+	cd target/lambda/lambda_sns_to_slack/ && zip --update ./bootstrap.zip ./bootstrap && ls -sl
+	zip -sf target/lambda/lambda_sns_to_slack/bootstrap.zip
 
 image_build: ## build image with registry cache
 image_build: lint
