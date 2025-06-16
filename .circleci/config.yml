@@ -193,8 +193,10 @@ commands:
           name: Compress binary with upx
           command: |
             cd lambda_sns_to_slack/
-            find target/lambda -name bootstrap -exec ~/.local/bin/upx --best {} \;
-            cd target/lambda/lambda_sns_to_slack/ && zip --update ./bootstrap.zip ./bootstrap && ls -sl
+            upx --best target/lambda/lambda_sns_to_slack/bootstrap
+            cd target/lambda/lambda_sns_to_slack/
+            zip --update ./bootstrap.zip ./bootstrap
+            ls -sl
 
       - aws-cli/setup:
           profile_name: "tb_openid"
