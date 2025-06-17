@@ -738,7 +738,7 @@ dependencies = [
 
 [[package]]
 name = "lambda_sns_to_slack"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "aws_lambda_events",
  "chrono",

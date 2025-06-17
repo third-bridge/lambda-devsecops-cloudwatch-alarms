@@ -16,6 +16,9 @@ fmt:
 lint: fmt
 	cargo clippy --all-targets --all-features -- -D warnings
 
+test:
+	cargo test --all-features --all-targets
+
 upgrade:
 	cargo outdated
 	cargo upgrade

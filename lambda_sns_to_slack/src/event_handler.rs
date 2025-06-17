@@ -8,8 +8,9 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-static RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\d+\.\d+|\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}|\d+").unwrap());
+static RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"\d+\.\d+(?:[eE][+-]?\d+)?|\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}|\d+").unwrap()
+});
 
 static HTTP_CLIENT: Lazy<Client> = Lazy::new(Client::new);
 
@@ -34,7 +35,7 @@ pub struct MyCloudWatchAlarmTrigger {
 /// Converts an SNS event into a list of Slack payloads (serde_json::Value)
 pub(crate) fn sns_event_to_slack_payload_list(sns_event: &SnsEvent) -> Result<Vec<Value>, Error> {
     sns_event.records.iter().map(|record| {
-        tracing::debug!("Record: {:?}", record);
+        tracing::debug!("Record JSON: {}", serde_json::to_string(&record)?);
         let payload: MyCloudWatchAlarmPayload = serde_json::from_str(&record.sns.message)?;
 
         let color = match payload.new_state_value.as_ref() {
@@ -49,6 +50,7 @@ pub(crate) fn sns_event_to_slack_payload_list(sns_event: &SnsEvent) -> Result<Ve
             region = payload.region,
             alarm_name = payload.alarm_name
         );
+        tracing::debug!("Alarm URL: {}", alarm_url);
 
         let title = format!(
             "*{}: <{}|{}>*",
@@ -74,12 +76,15 @@ pub(crate) fn sns_event_to_slack_payload_list(sns_event: &SnsEvent) -> Result<Ve
 
 pub(crate) async fn function_handler(event: LambdaEvent<SnsEvent>) -> Result<(), Error> {
     let sns_event = event.payload;
-    let slack_payloads = sns_event_to_slack_payload_list(&sns_event)?;
+    tracing::debug!("SNS event: {}", serde_json::to_string(&sns_event)?);
 
+    let slack_payloads = sns_event_to_slack_payload_list(&sns_event)?;
     let slack_webhook_url =
         env::var("SLACK_WEBHOOK_URL").expect("SLACK_WEBHOOK_URL environment variable not set");
 
     for slack_payload in slack_payloads {
+        tracing::debug!("Slack payload: {}", serde_json::to_string(&slack_payload)?);
+
         let res = HTTP_CLIENT
             .post(&slack_webhook_url)
             .json(&slack_payload)
@@ -102,7 +107,8 @@ fn quote_numbers_and_dates(text: &str) -> String {
     // Match numbers (including decimals) and date/time patterns
     let re = &*RE;
 
-    static FLOAT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d+\.\d{4,}$").unwrap());
+    static FLOAT_RE: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"^\d+\.\d{4,}(?:[eE][+-]?\d+)?$").unwrap());
 
     re.replace_all(text, |caps: &regex::Captures| {
         let matched = &caps[0];
