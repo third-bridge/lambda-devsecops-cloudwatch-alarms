@@ -171,7 +171,6 @@ commands:
             rustup target add aarch64-unknown-linux-musl
             rm -f target/lambda/lambda_sns_to_slack/bootstrap target/lambda/lambda_sns_to_slack/bootstrap.zip
             cargo lambda build --target aarch64-unknown-linux-musl --release
-            cargo lambda build --target aarch64-unknown-linux-musl --release --output-format zip
             ls -sl target/lambda/lambda_sns_to_slack/
 
       - run:
@@ -195,7 +194,7 @@ commands:
           command: |
             cd lambda_sns_to_slack/target/lambda/lambda_sns_to_slack/
             upx --best ./bootstrap
-            zip --update ./bootstrap.zip ./bootstrap
+            zip -j ./bootstrap.zip ./bootstrap
             ls -sl
 
       - aws-cli/setup:
@@ -249,7 +248,7 @@ commands:
 
       - save_cache:
           name: Save Cargo Cache
-          key: v1-cargo-cache-{{ checksum "CACHED_VERSIONS.txt" }}
+          key: v1-cargo-cache-{{ checksum "lambda_sns_to_slack/Cargo.lock" }}-{{ checksum "CACHED_VERSIONS.txt" }}
           paths:
             - /home/circleci/.local/bin/ # upx binary
             - /home/circleci/.cargo/

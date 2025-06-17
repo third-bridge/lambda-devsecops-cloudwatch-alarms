@@ -1,24 +1,44 @@
 use std::env;
 
-use aws_lambda_events::event::sns::{CloudWatchAlarmPayload, SnsEvent};
+use aws_lambda_events::event::sns::SnsEvent;
 use lambda_runtime::{tracing, Error, LambdaEvent};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-static RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\d+\.\d+|\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}|\d+").unwrap());
+static RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"\d+\.\d+(?:[eE][+-]?\d+)?|\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}|\d+").unwrap()
+});
 
 static HTTP_CLIENT: Lazy<Client> = Lazy::new(Client::new);
+
+// ! Custom structs to workaround trend based alarms without threshold, aws_lambda_events may update it in the future
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct MyCloudWatchAlarmPayload {
+    pub alarm_name: String,
+    pub new_state_value: String,
+    pub new_state_reason: String,
+    pub alarm_arn: String,
+    pub alarm_description: String,
+    pub trigger: MyCloudWatchAlarmTrigger,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct MyCloudWatchAlarmTrigger {
+    pub threshold: Option<f64>,
+}
 
 /// Converts an SNS event into a list of Slack payloads (serde_json::Value)
 pub(crate) fn sns_event_to_slack_payload_list(sns_event: &SnsEvent) -> Result<Vec<Value>, Error> {
     sns_event.records.iter().map(|record| {
-        tracing::debug!("Record: {:?}", record);
-        let payload: CloudWatchAlarmPayload = serde_json::from_str(&record.sns.message)?;
+        tracing::debug!("Record JSON: {}", serde_json::to_string(&record)?);
+        let payload: MyCloudWatchAlarmPayload = serde_json::from_str(&record.sns.message)?;
 
-        let color = match payload.new_state_value.as_str() {
+        let color = match payload.new_state_value.as_ref() {
             "OK" => "36a64f",
             "ALARM" => "cb2431",
             "INSUFFICIENT_DATA" => "cb2431",
@@ -27,9 +47,10 @@ pub(crate) fn sns_event_to_slack_payload_list(sns_event: &SnsEvent) -> Result<Ve
 
         let alarm_url = format!(
             "https://{region}.console.aws.amazon.com/cloudwatch/home?region={region}#alarmsV2:alarm/{alarm_name}",
-            region = payload.region,
+            region = payload.alarm_arn.split(':').collect::<Vec<&str>>().get(3).unwrap_or(&"eu-west-1"),
             alarm_name = payload.alarm_name
         );
+        tracing::debug!("Alarm URL: {}", alarm_url);
 
         let title = format!(
             "*{}: <{}|{}>*",
@@ -54,13 +75,18 @@ pub(crate) fn sns_event_to_slack_payload_list(sns_event: &SnsEvent) -> Result<Ve
 }
 
 pub(crate) async fn function_handler(event: LambdaEvent<SnsEvent>) -> Result<(), Error> {
-    let sns_event = event.payload;
-    let slack_payloads = sns_event_to_slack_payload_list(&sns_event)?;
+    tracing::info!("Lambda version: {}", env!("CARGO_PKG_VERSION"));
 
+    let sns_event = event.payload;
+    tracing::debug!("SNS event: {}", serde_json::to_string(&sns_event)?);
+
+    let slack_payloads = sns_event_to_slack_payload_list(&sns_event)?;
     let slack_webhook_url =
         env::var("SLACK_WEBHOOK_URL").expect("SLACK_WEBHOOK_URL environment variable not set");
 
     for slack_payload in slack_payloads {
+        tracing::debug!("Slack payload: {}", serde_json::to_string(&slack_payload)?);
+
         let res = HTTP_CLIENT
             .post(&slack_webhook_url)
             .json(&slack_payload)
@@ -83,15 +109,20 @@ fn quote_numbers_and_dates(text: &str) -> String {
     // Match numbers (including decimals) and date/time patterns
     let re = &*RE;
 
-    static FLOAT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d+\.\d{4,}$").unwrap());
+    static FLOAT_RE: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"^\d+\.\d{4,}(?:[eE][+-]?\d+)?$").unwrap());
 
     re.replace_all(text, |caps: &regex::Captures| {
         let matched = &caps[0];
-        // Only keep 4 decimal places for floats
         if FLOAT_RE.is_match(matched) {
-            // Parse as f64 and format to 4 decimal places
             match matched.parse::<f64>() {
-                Ok(num) => format!("`{:.4}`", num),
+                Ok(num) => {
+                    if matched.contains('E') || matched.contains('e') {
+                        format!("`{:.4E}`", num)
+                    } else {
+                        format!("`{:.4}`", num)
+                    }
+                }
                 Err(_) => format!("`{}`", matched),
             }
         } else {
