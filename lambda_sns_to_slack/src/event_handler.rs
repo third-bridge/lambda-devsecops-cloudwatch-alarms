@@ -21,7 +21,7 @@ pub struct MyCloudWatchAlarmPayload {
     pub alarm_name: String,
     pub new_state_value: String,
     pub new_state_reason: String,
-    pub region: String,
+    pub alarm_arn: String,
     pub alarm_description: String,
     pub trigger: MyCloudWatchAlarmTrigger,
 }
@@ -47,7 +47,7 @@ pub(crate) fn sns_event_to_slack_payload_list(sns_event: &SnsEvent) -> Result<Ve
 
         let alarm_url = format!(
             "https://{region}.console.aws.amazon.com/cloudwatch/home?region={region}#alarmsV2:alarm/{alarm_name}",
-            region = payload.region,
+            region = payload.alarm_arn.split(':').collect::<Vec<&str>>().get(3).unwrap_or(&"eu-west-1"),
             alarm_name = payload.alarm_name
         );
         tracing::debug!("Alarm URL: {}", alarm_url);
@@ -75,6 +75,8 @@ pub(crate) fn sns_event_to_slack_payload_list(sns_event: &SnsEvent) -> Result<Ve
 }
 
 pub(crate) async fn function_handler(event: LambdaEvent<SnsEvent>) -> Result<(), Error> {
+    tracing::info!("Lambda version: {}", env!("CARGO_PKG_VERSION"));
+
     let sns_event = event.payload;
     tracing::debug!("SNS event: {}", serde_json::to_string(&sns_event)?);
 
