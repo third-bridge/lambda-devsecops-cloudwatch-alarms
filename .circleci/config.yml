@@ -248,7 +248,7 @@ commands:
 
       - save_cache:
           name: Save Cargo Cache
-          key: v1-cargo-cache-{{ checksum "CACHED_VERSIONS.txt" }}
+          key: v1-cargo-cache-{{ checksum "lambda_sns_to_slack/Cargo.lock" }}-{{ checksum "CACHED_VERSIONS.txt" }}
           paths:
             - /home/circleci/.local/bin/ # upx binary
             - /home/circleci/.cargo/
