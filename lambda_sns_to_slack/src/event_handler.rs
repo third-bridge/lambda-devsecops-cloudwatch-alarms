@@ -114,16 +114,15 @@ fn quote_numbers_and_dates(text: &str) -> String {
 
     re.replace_all(text, |caps: &regex::Captures| {
         let matched = &caps[0];
-        if matched.contains('E') || matched.contains('e') {
-            // Scientific notation: format to 5 significant digits
+        if FLOAT_RE.is_match(matched) {
             match matched.parse::<f64>() {
-                Ok(num) => format!("`{:.4E}`", num),
-                Err(_) => format!("`{}`", matched),
-            }
-        } else if FLOAT_RE.is_match(matched) {
-            // Parse as f64 and format to 4 decimal places
-            match matched.parse::<f64>() {
-                Ok(num) => format!("`{:.4}`", num),
+                Ok(num) => {
+                    if matched.contains('E') || matched.contains('e') {
+                        format!("`{:.4E}`", num)
+                    } else {
+                        format!("`{:.4}`", num)
+                    }
+                }
                 Err(_) => format!("`{}`", matched),
             }
         } else {
